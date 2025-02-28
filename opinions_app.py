@@ -3,7 +3,7 @@
 from datetime import datetime
 from random import randrange
 
-from flask import Flask, redirect, render_template, url_for
+from flask import Flask, abort, redirect, render_template, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 from flask_wtf import FlaskForm
@@ -43,11 +43,22 @@ class OpinionForm(FlaskForm):
     submit = SubmitField('Добавить')
 
 
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template('500.html')
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('404.html'), 404
+
+
 @app.route('/')
 def index_view():
     quantity = Opinion.query.count()
     if not quantity:
-        return 'В базе данных записей нет.'
+        abort(500)
     offset_value = randrange(quantity)
     opinion = Opinion.query.offset(offset_value).first()
     return render_template('opinion.html', opinion=opinion)
