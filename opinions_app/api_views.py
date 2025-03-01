@@ -20,3 +20,12 @@ def update_opinion(id):
     opinion.added_by = data.get('added_by', opinion.added_by)
     db.session.commit()
     return jsonify({'opinion': opinion.to_dict()}), 200
+
+
+@app.route('/api/opinions/<int:id>/', methods=['DELETE'])
+def delete_opinion(id):
+    data = request.get_json()
+    opinion = Opinion.query.get_or_404(id)
+    db.session.delete(opinion)
+    db.session.commit()
+    return '', 204
