@@ -24,8 +24,24 @@ def update_opinion(id):
 
 @app.route('/api/opinions/<int:id>/', methods=['DELETE'])
 def delete_opinion(id):
-    data = request.get_json()
     opinion = Opinion.query.get_or_404(id)
     db.session.delete(opinion)
     db.session.commit()
     return '', 204
+
+
+@app.route('/api/opinions/', methods=['GET'])
+def get_opinions():
+    opinions = Opinion.query.all()
+    opinions_list = [opinion.to_dict() for opinion in opinions]
+    return jsonify({'opinions': opinions_list}), 200
+
+
+@app.route('/api/opinions/', methods=['POST'])
+def add_opinion():
+    data = request.get_json()
+    opinion = Opinion()
+    opinion.from_dict(data)
+    db.session.add(opinion)
+    db.session.commit()
+    return jsonify({'opinion': opinion.to_dict()}), 201
