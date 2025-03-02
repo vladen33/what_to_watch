@@ -3,6 +3,7 @@ from random import randrange
 from flask import jsonify, request
 
 from . import app, db
+from .error_handlers import InvalidAPIUsage
 from .models import Opinion
 from .views import random_opinion
 
@@ -15,6 +16,11 @@ def get_opinion(id):
 
 @app.route('/api/opinions/<int:id>/', methods=['PATCH'])
 def update_opinion(id):
+    data = request.get_json()
+    if ('text' in data and
+        Opinion.query.filter_by(text=data['text']).first() is not None
+    ):
+        raise  InvalidAPIUsage('Такое мнение уже есть в базе данных')
     opinion = Opinion.query.get_or_404(id)
     opinion.title = request.json.get('title', opinion.title)
     opinion.text = request.json.get('text', opinion.text)
@@ -41,7 +47,13 @@ def get_opinions():
 
 @app.route('/api/opinions/', methods=['POST'])
 def add_opinion():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if data is None:
+        raise  InvalidAPIUsage('В запросе отсутствуют тело запроса')
+    if 'title' not in data or 'text' not in data:
+        raise  InvalidAPIUsage('В запросе отсутствуют обязательные поля')
+    if Opinion.query.filter_by(text=data['text']).first() is not None:
+        raise  InvalidAPIUsage('Такая запись уже есть')
     opinion = Opinion()
     opinion.from_dict(data)
     db.session.add(opinion)
